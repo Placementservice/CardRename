@@ -108,6 +108,12 @@
 
                 sdk.success("Название обновлено: " + newTitle);
 
+                // --- Автоматическое закрытие ---
+                setTimeout(() => {
+                    sdk.closeCurrentModule();
+                }, 3000);
+                // --------------------
+
             } catch (err) {
                 console.error(err);
                 sdk.error("Произошла системная ошибка при переименовании.");
