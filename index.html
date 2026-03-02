@@ -1,16 +1,124 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <script src="https://files.kaiten.ru.ru/web-sdk/v1.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Kaiten Card Renamer Addon</title>
+    <script src="https://files.kaiten.ru/web-sdk/v1.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 15px; 
+            display: flex; 
+            justify-content: center;
+            background-color: transparent;
+        }
+        #rename-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        #rename-btn:hover { background-color: #0056b3; }
+    </style>
 </head>
-
 <body>
-  <h1>Hey there! 👋</h1>
 
-  <p>This is test kaiten addon connect and initialize page</p>
-  <script src="js/client.js"></script>
+    <button id="rename-btn">Переименовать по шаблону</button>
+
+    <script>
+        const sdk = window.kaiten.sdk();
+
+        document.getElementById('rename-btn').addEventListener('click', async () => {
+            try {
+                // 1. Получаем полные данные текущей карточки
+                const card = await sdk.getCard();
+                if (!card) return;
+
+                // Названия полей (должны точно совпадать с названиями в Kaiten)
+                const FIELD_NAMES = {
+                    BS_NUMBER: "Номер БС",
+                    OPERATOR: "Субарендатор (Оператор)",
+                    OBJECT: "Объект",
+                    WORK_TYPE: "Тип работ"
+                };
+
+                // Вспомогательная функция для получения значения свойства
+                const getProp = (name) => card.properties.find(p => p.name === name);
+
+                // --- Сбор и проверка данных ---
+
+                // bbbbb – Номер БС (Строка)
+                const propBS = getProp(FIELD_NAMES.BS_NUMBER);
+                const bbbbb = propBS ? propBS.value : "";
+                if (!bbbbb || bbbbb.length < 2 || bbbbb.length > 10) {
+                    return sdk.error("Ошибка: 'Номер БС' должен быть от 2 до 10 символов.");
+                }
+
+                // ooo – Субарендатор (Селект)
+                const propOp = getProp(FIELD_NAMES.OPERATOR);
+                const ooo = propOp ? propOp.value : "";
+                if (!ooo || ooo.length !== 3) {
+                    return sdk.error("Ошибка: 'Субарендатор' должен содержать 3 символа.");
+                }
+
+                // nnnnn – Объект (Справочник, первый столбец)
+                const propObj = getProp(FIELD_NAMES.OBJECT);
+                const nnnnn = propObj && propObj.value ? propObj.value : "";
+                if (!nnnnn || nnnnn.length !== 6) {
+                    return sdk.error("Ошибка: 'Код объекта' в справочнике должен быть 6 символов.");
+                }
+
+                // dd – Тип карточки (Исправлено)
+                const dd = card.type ? card.type.name : "";
+                if (!dd || dd.length < 2 || dd.length > 5) {
+                    return sdk.error(`Ошибка: Тип карточки "${dd}" должен быть от 2 до 5 символов.`);
+                }
+
+                // tttt – Тип работ (Маппинг)
+                const propWork = getProp(FIELD_NAMES.WORK_TYPE);
+                const rawWorkType = propWork ? propWork.value : "";
+                const workTypeMap = {
+                    "Модернизация": "Мод",
+                    "Новая стройка": "НС",
+                    "ВОЛС": "ВОЛС"
+                };
+                const tttt = workTypeMap[rawWorkType];
+                if (!tttt) {
+                    return sdk.error("Ошибка: Укажите корректный 'Тип работ' (Модернизация, Новая стройка или ВОЛС).");
+                }
+
+                // _kkkk – Метка "Корректировка ТУ"
+                let kkkk = "";
+                if (card.tags && card.tags.some(t => t.name === "Корректировка ТУ")) {
+                    kkkk = "_корр";
+                }
+
+                // --- Сборка и сохранение ---
+
+                const newTitle = `${bbbbb}_${ooo}_${nnnnn}_${dd}_${tttt}${kkkk}`;
+
+                await sdk.updateCard({
+                    id: card.id,
+                    title: newTitle
+                });
+
+                sdk.success("Название обновлено: " + newTitle);
+
+                // --- Автоматическое закрытие ---
+                setTimeout(() => {
+                    sdk.closeCurrentModule();
+                }, 3000);
+                // --------------------
+
+            } catch (err) {
+                console.error(err);
+                sdk.error("Произошла системная ошибка при переименовании.");
+            }
+        });
+    </script>
 </body>
-
 </html>
