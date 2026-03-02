@@ -1,2 +1,0 @@
-# CardRename
-Kaiten
