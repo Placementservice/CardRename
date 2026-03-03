@@ -1,6 +1,6 @@
 Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
-      const butttons = [];
+      const buttons = [];
       buttons.push({
         text: 'Test button 1',
         callback: async (callbackContext, callbackOptions) => {
