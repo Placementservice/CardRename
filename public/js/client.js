@@ -53,7 +53,7 @@ Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
       const buttons = [];
       buttons.push({
-        text: 'Тестовая кнопка (пока не нажимать 😜)',
+        text: 'Тестовая кнопка (не нажимать)',
         callback: async (callbackContext, callbackOptions) => {
           console.log('card test button 1 clicked, i will fetch card and simply console log it');
           try {
