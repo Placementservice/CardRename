@@ -1,4 +1,4 @@
-Addon.initialize({
+/*Addon.initialize({
   'card_buttons': async (cardButtonsContext) => {
     const buttons = [];
     buttons.push({
@@ -31,7 +31,7 @@ Addon.initialize({
   }
 });
 
-/*// Оборачиваем в проверку, чтобы убедиться, что SDK загружен
+// Оборачиваем в проверку, чтобы убедиться, что SDK загружен
 if (typeof Addon !== 'undefined') {
   Addon.initialize({
     'card_buttons': (cardButtonsContext) => {
@@ -81,7 +81,7 @@ Addon.initialize({
       return buttons;
     }
 });
-
+*/
 Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
       const buttons = [];
@@ -100,4 +100,4 @@ Addon.initialize({
       return buttons;
     }
   })
-*/
+
