@@ -1,4 +1,36 @@
-Addon.initialize({
+// Оборачиваем в проверку, чтобы убедиться, что SDK загружен
+if (typeof Addon !== 'undefined') {
+  Addon.initialize({
+    'card_buttons': (cardButtonsContext) => {
+      // Возвращаем массив кнопок
+      return [
+        {
+          text: 'Вывести свойства карточки',
+          callback: async (callbackContext) => {
+            console.log('--- Start fetching card properties ---');
+            try {
+              // Важно: getCardProperties — это асинхронный метод
+              const properties = await callbackContext.getCardProperties();
+              console.log('Данные карточки получены:', properties);
+              
+              // Дополнительно выведем в читаемом виде заголовок, если он есть
+              if (properties && properties.title) {
+                console.log('Название карточки: ' + properties.title);
+              }
+            } catch (err) {
+              console.error('Ошибка при получении свойств:', err);
+            }
+          }
+        }
+      ];
+    }
+  });
+} else {
+  console.error('Kaiten Web SDK (Addon) не найден. Проверьте подключение скрипта в HTML.');
+}
+
+
+/*Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
       const buttons = [];
       buttons.push({
@@ -15,7 +47,7 @@ Addon.initialize({
       });
       return buttons;
     }
-});
+});*/
 
 /*Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
