@@ -1,3 +1,36 @@
+Addon.initialize({
+  'card_buttons': async (cardButtonsContext) => {
+    const buttons = [];
+    buttons.push({
+      text: 'Тестовая кнопка (не нажимать)',
+      callback: async (callbackContext, callbackOptions) => {
+        console.log('card test button 1 clicked, i will fetch all card properties and console log them');
+        
+        try {
+          // Используем рекомендуемую функцию для получения всех данных
+          const cardData = await callbackContext.getCardProperties();
+          
+          // Выводим весь объект целиком, чтобы изучить структуру
+          console.log('Full card data object:', cardData);
+          
+          // Для удобства выведем ключевые блоки данных отдельно
+          console.log('Title:', cardData.title);
+          console.log('Custom Properties (Поля):', cardData.properties);
+          
+          // Если нужно увидеть структуру конкретного поля, можно развернуть properties
+          if (cardData.properties) {
+            console.table(cardData.properties);
+          }
+
+        } catch (err) {
+          console.error('Error while fetching card properties:', err);
+        }
+      }
+    });
+    return buttons;
+  }
+});
+
 /*// Оборачиваем в проверку, чтобы убедиться, что SDK загружен
 if (typeof Addon !== 'undefined') {
   Addon.initialize({
@@ -47,7 +80,7 @@ Addon.initialize({
       });
       return buttons;
     }
-});*/
+});
 
 Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
@@ -67,3 +100,4 @@ Addon.initialize({
       return buttons;
     }
   })
+*/
