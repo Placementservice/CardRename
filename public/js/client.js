@@ -90,7 +90,7 @@ Addon.initialize({
         callback: async (callbackContext, callbackOptions) => {
           console.log('card test button 1 clicked, i will fetch card and simply console log it');
           try {
-            const card = await callbackContext.getCard();
+            const card = await callbackContext.getCardProperties(type);
             console.log('here is card title: ', card.title);
           } catch (err) {
             console.log('error while fetching card');
