@@ -1,4 +1,4 @@
-// Оборачиваем в проверку, чтобы убедиться, что SDK загружен
+/*// Оборачиваем в проверку, чтобы убедиться, что SDK загружен
 if (typeof Addon !== 'undefined') {
   Addon.initialize({
     'card_buttons': (cardButtonsContext) => {
@@ -30,7 +30,7 @@ if (typeof Addon !== 'undefined') {
 }
 
 
-/*Addon.initialize({
+Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
       const buttons = [];
       buttons.push({
@@ -49,7 +49,7 @@ if (typeof Addon !== 'undefined') {
     }
 });*/
 
-/*Addon.initialize({
+Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
       const buttons = [];
       buttons.push({
@@ -66,4 +66,4 @@ if (typeof Addon !== 'undefined') {
       });
       return buttons;
     }
-  })*/
+  })
