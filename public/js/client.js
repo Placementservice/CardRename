@@ -6,7 +6,7 @@ Addon.initialize({
         callback: async (callbackContext, callbackOptions) => {
           console.log('Кнопка нажата');
           try {
-            const card = await callbackContext.getCardProperties(customProperties); // попытка смены команды
+            const card = await callbackContext.getCardProperties('customProperties'); // попытка смены команды
             console.log('Весь массив card:', card);
           } catch (err) {
             console.log('error while fetching card');
