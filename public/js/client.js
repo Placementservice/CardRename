@@ -7,7 +7,7 @@ Addon.initialize({
           console.log('Кнопка нажата');
           try {
             const card = await callbackContext.getCard();
-            console.log('here is card title: ', card.title);
+            console.log('Весь массив card:', card);
           } catch (err) {
             console.log('error while fetching card');
           }
