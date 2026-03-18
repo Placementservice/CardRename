@@ -10,6 +10,23 @@ Addon.initialize({
                     const tags = await callbackContext.getCardProperties('tags');
                     console.log('Теги карточки:', tags);
 
+                    // Проверяем наличие метки "Корректировка ТУ" в массиве тегов
+                    const hasCorrectionTag = Array.isArray(tags) && tags.some(tag => tag.name === 'Корректировка ТУ');
+                    
+                    // Присваиваем результат переменной
+                    let correctionTagExists = hasCorrectionTag;
+                    
+                    console.log('Результат проверки наличия метки "Корректировка ТУ":', correctionTagExists);
+                    
+                    // Можно использовать переменную correctionTagExists для дальнейшей логики
+                    if (correctionTagExists) {
+                        console.log('Метка "Корректировка ТУ" найдена');
+                        // Здесь можно выполнить нужные действия
+                    } else {
+                        console.log('Метка "Корректировка ТУ" не найдена');
+                        // Здесь можно выполнить другие действия
+                    }
+
                     // Получаем пользовательские свойства (custom fields)
                     const customProps = await callbackContext.getCardProperties('customProperties');
                     console.log('Пользовательские свойства:', customProps);
