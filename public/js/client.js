@@ -125,6 +125,34 @@ Addon.initialize({
                     console.log('cardTitle (Сформированное название карточки):', cardTitle);
                     console.log('=== КОНЕЦ РЕЗУЛЬТАТОВ ===');
 
+                    // Копируем значение cardTitle в буфер обмена
+                    try {
+                        // Создаем временный элемент textarea для копирования
+                        const textarea = document.createElement('textarea');
+                        textarea.value = cardTitle;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        
+                        // Показываем alert с сообщением
+                        alert('Название карточки скопировано! Значение: ' + cardTitle);
+                        
+                        console.log('Значение скопировано в буфер обмена:', cardTitle);
+                    } catch (clipboardError) {
+                        console.error('Ошибка при копировании в буфер обмена:', clipboardError);
+                        
+                        // Альтернативный метод с использованием современного Clipboard API
+                        try {
+                            await navigator.clipboard.writeText(cardTitle);
+                            alert('Название карточки скопировано! Значение: ' + cardTitle);
+                            console.log('Значение скопировано в буфер обмена (Clipboard API):', cardTitle);
+                        } catch (modernClipboardError) {
+                            console.error('Ошибка при использовании Clipboard API:', modernClipboardError);
+                            alert('Не удалось скопировать название карточки. Ошибка: ' + modernClipboardError.message);
+                        }
+                    }
+
                     // Можно использовать переменные для дальнейшей логики
                     if (correctionTagExists) {
                         console.log('Метка "Корректировка ТУ" найдена');
@@ -139,6 +167,7 @@ Addon.initialize({
 
                 } catch (err) {
                     console.log('Ошибка при получении данных карточки:', err);
+                    alert('Произошла ошибка: ' + err.message);
                 }
             }
         });
