@@ -4,7 +4,7 @@ Addon.initialize({
         buttons.push({
             text: 'Тестовая кнопка (не нажимать)',
             callback: async (callbackContext, callbackOptions) => {
-                console.log('Кнопка нажата');
+                console.log('Кнопка нажата (v2_18/03/2026)');
                 try {
                     // Получаем список тегов карточки
                     const tags = await callbackContext.getCardProperties('tags');
