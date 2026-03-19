@@ -1,7 +1,7 @@
 Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
         const buttons = [{
-            text: 'Тестовая кнопка (не нажимать)',
+            text: 'CardRename',
             callback: async (ctx) => {
                 console.log('Кнопка нажата (v2_18/03/2026 - 16:35)');
                 
