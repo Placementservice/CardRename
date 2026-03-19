@@ -8,8 +8,7 @@ Addon.initialize({
                 try {
                     // Получаем список тегов карточки
                     const tags = await callbackContext.getCardProperties('tags');
-                    console.log('Теги карточки:', tags);
-
+                    
                     // Проверяем наличие метки "Корректировка ТУ" в массиве тегов
                     const hasCorrectionTag = Array.isArray(tags) && tags.some(tag => tag.name === 'Корректировка ТУ');
                     
@@ -18,7 +17,6 @@ Addon.initialize({
 
                     // Получаем пользовательские свойства (custom fields)
                     const customProps = await callbackContext.getCardProperties('customProperties');
-                    console.log('Пользовательские свойства:', customProps);
 
                     // Функция для получения значения по имени поля
                     const getCustomFieldValue = (fieldName) => {
@@ -57,7 +55,6 @@ Addon.initialize({
 
                     // Получаем значение name из типа карточки
                     const cardType = await callbackContext.getCardProperties('type');
-                    console.log('Тип карточки:', cardType);
                     
                     // Извлекаем name из типа карточки (если это объект с полем name)
                     let cardTypeName = 'XXXX';
@@ -80,7 +77,7 @@ Addon.initialize({
                             case 'Новая стройка':
                                 return 'НС';
                             default:
-                                return workType; // Если тип не определен, возвращаем исходное значение
+                                return workType;
                         }
                     };
 
@@ -113,56 +110,55 @@ Addon.initialize({
                     // Присваиваем переменной сформированное название карточки
                     let cardTitle = cardName;
 
-                    // Выводим все переменные с их названиями и значениями в консоль
-                    console.log('=== РЕЗУЛЬТАТЫ ===');
-                    console.log('correctionTagExists (Наличие метки "Корректировка ТУ"):', correctionTagExists);
-                    console.log('objectField (Объект):', objectField);
-                    console.log('sublessorField (Субарендатор (Оператор)):', sublessorField);
-                    console.log('workTypeField (Тип работ):', workTypeField);
-                    console.log('workTypeAbbr (Сокращение типа работ):', workTypeAbbr);
-                    console.log('bsNumberField (Номер БС):', bsNumberField);
-                    console.log('typeNameField (Тип карточки - name):', typeNameField);
-                    console.log('cardTitle (Сформированное название карточки):', cardTitle);
-                    console.log('=== КОНЕЦ РЕЗУЛЬТАТОВ ===');
+                    // Функция для копирования в буфер обмена (с запасным методом)
+                    const copyToClipboard = async (text) => {
+                        // Сначала пробуем современный Clipboard API с фокусом
+                        try {
+                            // Пытаемся сфокусироваться на документе
+                            window.focus();
+                            document.body.focus();
+                            
+                            await navigator.clipboard.writeText(text);
+                            return true; // Успешно
+                        } catch (clipboardError) {
+                            console.warn('Clipboard API не сработал, пробуем запасной метод:', clipboardError);
+                            
+                            // Запасной метод с созданием временного элемента
+                            try {
+                                const textarea = document.createElement('textarea');
+                                textarea.value = text;
+                                textarea.style.position = 'fixed'; // Предотвращаем прокрутку
+                                textarea.style.opacity = '0';
+                                document.body.appendChild(textarea);
+                                textarea.focus();
+                                textarea.select();
+                                
+                                const successful = document.execCommand('copy');
+                                document.body.removeChild(textarea);
+                                
+                                if (successful) {
+                                    return true;
+                                } else {
+                                    throw new Error('execCommand вернул false');
+                                }
+                            } catch (fallbackError) {
+                                console.error('Запасной метод тоже не сработал:', fallbackError);
+                                throw new Error('Не удалось скопировать текст');
+                            }
+                        }
+                    };
 
                     // Копируем значение cardTitle в буфер обмена
                     try {
-                        // Создаем временный элемент textarea для копирования
-                        const textarea = document.createElement('textarea');
-                        textarea.value = cardTitle;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                        
-                        // Показываем alert с сообщением
+                        await copyToClipboard(cardTitle);
                         alert('Название карточки скопировано! Значение: ' + cardTitle);
-                        
-                        console.log('Значение скопировано в буфер обмена:', cardTitle);
                     } catch (clipboardError) {
                         console.error('Ошибка при копировании в буфер обмена:', clipboardError);
+                        alert('Не удалось скопировать название карточки. Попробуйте выделить текст вручную.');
                         
-                        // Альтернативный метод с использованием современного Clipboard API
-                        try {
-                            await navigator.clipboard.writeText(cardTitle);
-                            alert('Название карточки скопировано! Значение: ' + cardTitle);
-                            console.log('Значение скопировано в буфер обмена (Clipboard API):', cardTitle);
-                        } catch (modernClipboardError) {
-                            console.error('Ошибка при использовании Clipboard API:', modernClipboardError);
-                            alert('Не удалось скопировать название карточки. Ошибка: ' + modernClipboardError.message);
-                        }
-                    }
-
-                    // Можно использовать переменные для дальнейшей логики
-                    if (correctionTagExists) {
-                        console.log('Метка "Корректировка ТУ" найдена');
-                        // Здесь можно использовать полученные поля
-                        console.log('Данные карточки с меткой:',
-                            objectField, sublessorField, workTypeField, bsNumberField, typeNameField
-                        );
-                    } else {
-                        console.log('Метка "Корректировка ТУ" не найдена');
-                        // Здесь можно выполнить другие действия
+                        // Дополнительно: показываем текст в консоли и в alert для ручного копирования
+                        console.log('Текст для копирования (скопируйте вручную):', cardTitle);
+                        prompt('Скопируйте текст вручную (Ctrl+C):', cardTitle);
                     }
 
                 } catch (err) {
