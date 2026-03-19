@@ -1,7 +1,7 @@
 Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
         const buttons = [{
-            text: 'CardRename',
+            text: 'Тестовая кнопка (не нажимать)',
             callback: async (ctx) => {
                 console.log('Кнопка нажата (v2_18/03/2026 - 16:35)');
                 
@@ -92,23 +92,14 @@ Addon.initialize({
                     // Копируем и показываем результат
                     const copyResult = await copyToClipboard(cardTitle);
                     
-                    if (copyResult.success) {
-                        alert(`Название карточки скопировано! Значение: ${cardTitle}`);
-                    } else {
+                    if (!copyResult.success) {
                         // Если автоматическое копирование не сработало, показываем prompt
                         console.log('Текст для ручного копирования:', cardTitle);
-                        const userCopy = prompt('Не удалось скопировать автоматически. Скопируйте текст вручную (Ctrl+C):', cardTitle);
-                        
-                        if (userCopy !== null) {
-                            alert('Текст доступен для ручного копирования!');
-                        } else {
-                            alert('Копирование отменено пользователем');
-                        }
+                        prompt('Скопируйте название карточки вручную (Ctrl+C):', cardTitle);
                     }
 
                 } catch (err) {
                     console.error('Ошибка:', err);
-                    alert(`Произошла ошибка: ${err.message}`);
                 }
             }
         }];
