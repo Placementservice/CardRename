@@ -3,7 +3,7 @@ Addon.initialize({
         const buttons = [{
             text: 'Card_Title',
             callback: async (ctx) => {
-                console.log('Кнопка нажата (v2_18/03/2026 - 16:35)');
+                console.log('Кнопка нажата (v3_20/03/2026 - с поддержкой трех меток)');
                 
                 try {
                     // Параллельно получаем все необходимые данные
@@ -13,8 +13,23 @@ Addon.initialize({
                         ctx.getCardProperties('type')
                     ]);
 
-                    // Проверяем наличие метки
-                    const hasCorrectionTag = tags?.some?.(tag => tag.name === 'Корректировка ТУ') ?? false;
+                    // Массив меток, при наличии которых добавляется суффикс "_корр"
+                    const correctionTags = [
+                        'Корректировка ТУ',
+                        'Пересогласование ТР',
+                        'Повторный допуск'
+                    ];
+                    
+                    // Проверяем наличие хотя бы одной из меток
+                    const hasCorrectionTag = tags?.some?.(tag => 
+                        correctionTags.includes(tag.name)
+                    ) ?? false;
+                    
+                    // Логируем результат проверки для отладки
+                    if (hasCorrectionTag) {
+                        const foundTags = tags?.filter(tag => correctionTags.includes(tag.name)) || [];
+                        console.log('Найдены метки для суффикса _корр:', foundTags.map(t => t.name).join(', '));
+                    }
 
                     // Функция для быстрого поиска значения в customProps
                     const findFieldValue = (fieldName) => {
@@ -46,15 +61,22 @@ Addon.initialize({
                     };
                     const workTypeAbbr = workTypeMap[workType] || workType;
 
-                    // Формируем название карточки
-                    const cardTitle = [
+                    // Формируем массив частей названия
+                    const titleParts = [
                         bsNumber,
                         sublessor,
                         object,
                         typeName,
-                        workTypeAbbr,
-                        hasCorrectionTag && 'корр'
-                    ].filter(Boolean).join('_');
+                        workTypeAbbr
+                    ];
+                    
+                    // Добавляем суффикс "_корр" при наличии соответствующей метки
+                    if (hasCorrectionTag) {
+                        titleParts.push('корр');
+                    }
+                    
+                    // Собираем название карточки
+                    const cardTitle = titleParts.join('_');
 
                     // Функция копирования в буфер обмена с запасными вариантами
                     const copyToClipboard = async (text) => {
@@ -96,6 +118,10 @@ Addon.initialize({
                         // Если автоматическое копирование не сработало, показываем prompt
                         console.log('Текст для ручного копирования:', cardTitle);
                         prompt('Скопируйте название карточки вручную (Ctrl+C):', cardTitle);
+                    } else {
+                        console.log('Название скопировано:', cardTitle);
+                        // Опционально: показать уведомление об успешном копировании
+                        // ctx.showNotification({ text: 'Название скопировано!', type: 'success' });
                     }
 
                 } catch (err) {
