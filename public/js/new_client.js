@@ -1,9 +1,13 @@
+// ===== Получаем API-клиент ОДИН РАЗ при загрузке аддона =====
+// Это должно быть на верхнем уровне, вне callback'ов
+const apiClient = window.Addon.iframe().getApiClient();
+
 Addon.initialize({
   'card_buttons': async (cardButtonsContext) => {
     const buttons = [{
       text: 'Card_Title',
       callback: async (ctx) => {
-        console.log('Кнопка нажата (v4_26/06/2026 - переименование карточки)');
+        console.log('Кнопка нажата (v5_26/06/2026 - фикс ошибки iframe)');
         try {
           // Параллельно получаем все необходимые данные
           const [tags, customProps, cardType, card] = await Promise.all([
@@ -25,7 +29,6 @@ Addon.initialize({
             correctionTags.includes(tag.name)
           ) ?? false;
 
-          // Логируем результат проверки для отладки
           if (hasCorrectionTag) {
             const foundTags = tags?.filter(tag => correctionTags.includes(tag.name)) || [];
             console.log('Найдены метки для суффикса _корр:', foundTags.map(t => t.name).join(', '));
@@ -69,7 +72,6 @@ Addon.initialize({
             workTypeAbbr
           ];
 
-          // Добавляем суффикс "_корр" при наличии соответствующей метки
           if (hasCorrectionTag) {
             titleParts.push('корр');
           }
@@ -79,24 +81,19 @@ Addon.initialize({
 
           // ========== БЛОК: Переименование карточки через API ==========
           try {
-            const api = window.Addon.iframe().getApiClient();
-
-            // Проверяем, авторизован ли пользователь (паттерн из документации Kaiten)
-            // SDK автоматически обновит токен при HTTP-запросах, но нужно убедиться,
-            // что пользователь дал согласие на использование аддона
+            // Используем уже инициализированный apiClient (без повторного вызова iframe())
+            // Проверяем авторизацию (паттерн из документации Kaiten)
             try {
-              await api.getAccessToken();
+              await apiClient.getAccessToken();
             } catch {
-              // Если токен отсутствует — запускаем процесс авторизации
-              console.log('Пользователь ещё не авторизовал аддон, запускаем авторизацию...');
-              await api.authorize();
+              console.log('Запускаем авторизацию аддона...');
+              await apiClient.authorize();
             }
 
             const cardId = card.id;
 
-            // Обновляем название карточки через PATCH запрос
-            // SDK сам добавит Authorization: Bearer <token> и обновит токен при 401
-            const response = await api.patch(`/api/v1/cards/${cardId}`, {
+            // PATCH-запрос: SDK сам добавит заголовок Authorization и обновит токен при 401
+            const response = await apiClient.patch(`/api/v1/cards/${cardId}`, {
               title: cardTitle
             });
 
