@@ -6,11 +6,12 @@ Addon.initialize({
                 console.log('Кнопка нажата (v3_20/03/2026 - с поддержкой трех меток)');
                 
                 try {
-                    // Параллельно получаем все необходимые данные
-                    const [tags, customProps, cardType] = await Promise.all([
+                    // Параллельно получаем все необходимые данные + данные самой карточки
+                    const [tags, customProps, cardType, card] = await Promise.all([
                         ctx.getCardProperties('tags'),
                         ctx.getCardProperties('customProperties'),
-                        ctx.getCardProperties('type')
+                        ctx.getCardProperties('type'),
+                        ctx.getCard() // <-- Добавлено для получения cardId
                     ]);
 
                     // Массив меток, при наличии которых добавляется суффикс "_корр"
@@ -78,28 +79,42 @@ Addon.initialize({
                     // Собираем название карточки
                     const cardTitle = titleParts.join('_');
 
-                    // Новый эксперементальный блок вручную НАЧАЛО
+                    // ================= НОВЫЙ ЭКСПЕРИМЕНТАЛЬНЫЙ БЛОК =================
                     
-                    // Inside an addon iframe
+                    // 1. Получаем API клиент
                     const api = window.Addon.iframe().getApiClient();
                     
-                    const button = {
-                      text: 'Connect to platform API',
-                      callback: async () => {
-                        // Resolves with { access_token, expires_at } after the user grants consent.
+                    // 2. Получаем ID карточки
+                    const cardId = card?.id;
+                    if (!cardId) {
+                        console.error('Не удалось получить ID карточки');
+                        return;
+                    }
+
+                    // 3. Запрашиваем авторизацию (получаем access token)
+                    try {
                         const { access_token, expires_at } = await api.authorize();
                         console.log('Authorized, expires at:', expires_at);
-                      },
-                    };
-                    
-                    const updated = await api.patch(
-                      `/api/v1/cards/${cardId}`,
-                      { title: 'Вставить cardTitle' },
-                    );
+                    } catch (authError) {
+                        console.error('Ошибка авторизации:', authError);
+                        alert('Не удалось получить доступ к API. Пожалуйста, разрешите доступ.');
+                        return; // Прерываем выполнение, если токен не получен
+                    }
 
-                    // Новый эксперементальный блок вручную КОНЕЦ
+                    // 4. Обновляем название карточки через API
+                    const updated = await api.patch(
+                        `/api/v1/cards/${cardId}`,
+                        { title: cardTitle } // <-- Передаем именно переменную cardTitle
+                    );
                     
-            }
+                    console.log('Карточка успешно обновлена:', updated);
+
+                    // ================= КОНЕЦ НОВОГО БЛОКА =================
+                    
+                } catch (err) { // <-- ОБЯЗАТЕЛЬНО закрываем try блоком catch
+                    console.error('Глобальная ошибка выполнения:', err);
+                }
+            } // <-- Закрытие callback
         }];
         
         return buttons;
