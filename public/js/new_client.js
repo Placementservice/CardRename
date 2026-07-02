@@ -78,55 +78,27 @@ Addon.initialize({
                     // Собираем название карточки
                     const cardTitle = titleParts.join('_');
 
-                    // Функция копирования в буфер обмена с запасными вариантами
-                    const copyToClipboard = async (text) => {
-                        // 1. Пробуем современный Clipboard API
-                        try {
-                            await navigator.clipboard.writeText(text);
-                            return { success: true, method: 'api' };
-                        } catch (apiError) {
-                            console.warn('Clipboard API не сработал:', apiError);
-                            
-                            // 2. Пробуем запасной вариант с execCommand
-                            try {
-                                const textarea = document.createElement('textarea');
-                                textarea.value = text;
-                                textarea.style.cssText = 'position:fixed;opacity:0;';
-                                document.body.appendChild(textarea);
-                                textarea.select();
-                                
-                                const success = document.execCommand('copy');
-                                document.body.removeChild(textarea);
-                                
-                                if (success) {
-                                    return { success: true, method: 'execCommand' };
-                                }
-                                throw new Error('execCommand вернул false');
-                            } catch (execError) {
-                                console.warn('execCommand не сработал:', execError);
-                                
-                                // 3. Возвращаем неудачу для активации prompt
-                                return { success: false };
-                            }
-                        }
-                    };
-
-                    // Копируем и показываем результат
-                    const copyResult = await copyToClipboard(cardTitle);
+                    // Новый эксперементальный блок вручную НАЧАЛО
                     
-                    if (!copyResult.success) {
-                        // Если автоматическое копирование не сработало, показываем prompt
-                        console.log('Текст для ручного копирования:', cardTitle);
-                        prompt('Скопируйте название карточки вручную (Ctrl+C):', cardTitle);
-                    } else {
-                        console.log('Название скопировано:', cardTitle);
-                        // Опционально: показать уведомление об успешном копировании
-                        // ctx.showNotification({ text: 'Название скопировано!', type: 'success' });
-                    }
+                    // Inside an addon iframe
+                    const api = window.Addon.iframe().getApiClient();
+                    
+                    const button = {
+                      text: 'Connect to platform API',
+                      callback: async () => {
+                        // Resolves with { access_token, expires_at } after the user grants consent.
+                        const { access_token, expires_at } = await api.authorize();
+                        console.log('Authorized, expires at:', expires_at);
+                      },
+                    };
+                    
+                    const updated = await api.patch(
+                      `/api/v1/cards/${cardId}`,
+                      { title: 'Вставить cardTitle' },
+                    );
 
-                } catch (err) {
-                    console.error('Ошибка:', err);
-                }
+                    // Новый эксперементальный блок вручную КОНЕЦ
+                    
             }
         }];
         
