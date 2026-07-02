@@ -1,5 +1,16 @@
 Addon.initialize({
     'card_buttons': async (cardButtonsContext) => {
+        // Получаем iframe API один раз при первой инициализации
+        if (!apiClient) {
+            try {
+                const iframe = await Addon.iframe();
+                apiClient = iframe.getApiClient();
+                console.log('API клиент инициализирован');
+            } catch (error) {
+                console.error('Ошибка инициализации API клиента:', error);
+            }
+        }
+
         const buttons = [{
             text: 'Card_Title',
             callback: async (ctx) => {
@@ -11,7 +22,7 @@ Addon.initialize({
                         ctx.getCardProperties('tags'),
                         ctx.getCardProperties('customProperties'),
                         ctx.getCardProperties('type'),
-                        ctx.getCard() // <-- Добавлено для получения cardId
+                        ctx.getCard() // Получаем данные карточки для получения card_id
                     ]);
 
                     // Массив меток, при наличии которых добавляется суффикс "_корр"
@@ -79,42 +90,103 @@ Addon.initialize({
                     // Собираем название карточки
                     const cardTitle = titleParts.join('_');
 
-                    // ================= НОВЫЙ ЭКСПЕРИМЕНТАЛЬНЫЙ БЛОК =================
+                    // Функция копирования в буфер обмена с запасными вариантами
+                    const copyToClipboard = async (text) => {
+                        // 1. Пробуем современный Clipboard API
+                        try {
+                            await navigator.clipboard.writeText(text);
+                            return { success: true, method: 'api' };
+                        } catch (apiError) {
+                            console.warn('Clipboard API не сработал:', apiError);
+                            // 2. Пробуем запасной вариант с execCommand
+                            try {
+                                const textarea = document.createElement('textarea');
+                                textarea.value = text;
+                                textarea.style.cssText = 'position:fixed;opacity:0;';
+                                document.body.appendChild(textarea);
+                                textarea.select();
+                                const success = document.execCommand('copy');
+                                document.body.removeChild(textarea);
+                                if (success) {
+                                    return { success: true, method: 'execCommand' };
+                                }
+                                throw new Error('execCommand вернул false');
+                            } catch (execError) {
+                                console.warn('execCommand не сработал:', execError);
+                                // 3. Возвращаем неудачу для активации prompt
+                                return { success: false };
+                            }
+                        }
+                    };
+
+                    // Копируем название в буфер обмена
+                    const copyResult = await copyToClipboard(cardTitle);
+                    if (!copyResult.success) {
+                        console.log('Текст для ручного копирования:', cardTitle);
+                        prompt('Скопируйте название карточки вручную (Ctrl+C):', cardTitle);
+                    } else {
+                        console.log('Название скопировано:', cardTitle);
+                    }
+
+                    // ===== БЛОК ОБНОВЛЕНИЯ КАРТОЧКИ ЧЕРЕЗ API =====
                     
-                    // 1. Получаем API клиент
-                    const api = window.Addon.iframe().getApiClient();
-                    
-                    // 2. Получаем ID карточки
+                    // Проверяем, что API клиент инициализирован
+                    if (!apiClient) {
+                        console.error('API клиент не инициализирован');
+                        alert('Ошибка: API клиент не доступен. Обновите страницу.');
+                        return;
+                    }
+
+                    // Получаем ID карточки
                     const cardId = card?.id;
                     if (!cardId) {
                         console.error('Не удалось получить ID карточки');
                         return;
                     }
 
-                    // 3. Запрашиваем авторизацию (получаем access token)
+                    console.log('ID карточки для обновления:', cardId);
+
+                    // Запрашиваем авторизацию (получаем access token)
                     try {
-                        const { access_token, expires_at } = await api.authorize();
-                        console.log('Authorized, expires at:', expires_at);
+                        const { access_token, expires_at } = await apiClient.authorize();
+                        console.log('Авторизация пройдена, access token получен');
+                        console.log('Token expires at:', expires_at);
                     } catch (authError) {
                         console.error('Ошибка авторизации:', authError);
-                        alert('Не удалось получить доступ к API. Пожалуйста, разрешите доступ.');
-                        return; // Прерываем выполнение, если токен не получен
+                        alert('Не удалось получить доступ к API. Пожалуйста, разрешите доступ при появлении диалога авторизации.');
+                        return;
                     }
 
-                    // 4. Обновляем название карточки через API
-                    const updated = await api.patch(
-                        `/api/v1/cards/${cardId}`,
-                        { title: cardTitle } // <-- Передаем именно переменную cardTitle
-                    );
-                    
-                    console.log('Карточка успешно обновлена:', updated);
+                    // Обновляем название карточки через PATCH запрос
+                    try {
+                        const response = await apiClient.patch(`/api/v1/cards/${cardId}`, {
+                            title: cardTitle
+                        });
 
-                    // ================= КОНЕЦ НОВОГО БЛОКА =================
-                    
-                } catch (err) { // <-- ОБЯЗАТЕЛЬНО закрываем try блоком catch
-                    console.error('Глобальная ошибка выполнения:', err);
+                        if (response.ok || response.data) {
+                            console.log('Название карточки успешно обновлено:', cardTitle);
+                            // Показываем уведомление об успехе
+                            if (ctx.showNotification) {
+                                ctx.showNotification({ 
+                                    text: `Название карточки обновлено: ${cardTitle}`, 
+                                    type: 'success' 
+                                });
+                            }
+                        } else {
+                            console.error('Ошибка обновления карточки:', response.status, response.data);
+                            alert(`Ошибка обновления карточки: ${response.status}`);
+                        }
+                    } catch (updateError) {
+                        console.error('Ошибка при обновлении карточки:', updateError);
+                        alert('Произошла ошибка при обновлении названия карточки');
+                    }
+
+                    // ===== КОНЕЦ БЛОКА API =====
+
+                } catch (err) {
+                    console.error('Ошибка:', err);
                 }
-            } // <-- Закрытие callback
+            }
         }];
         
         return buttons;
